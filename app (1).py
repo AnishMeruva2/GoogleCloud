@@ -7,19 +7,21 @@ from datetime import datetime, date
 import pandas as pd
 import json
 
-# Load GCP credentials from Streamlit secrets
+# === Load GCP credentials from Streamlit secrets === #
 gcp_credentials_dict = st.secrets["gcp_key"]
-with open("gcp-key.json", "w") as f:
+
 # Fix the private_key to decode \\n to \n
 gcp_credentials_dict["private_key"] = gcp_credentials_dict["private_key"].replace("\\n", "\n")
 
-# Then write to file
+# Write fixed credentials to a local file (optional for libraries that require a path)
 with open("gcp-key.json", "w") as f:
-    json.dump(dict(gcp_credentials_dict), f)
+    json.dump(gcp_credentials_dict, f)
 
-# Explicitly set credentials for Vertex AI
-credentials = service_account.Credentials.from_service_account_info(gcp_credentials_dict)
+# Set environment variable for compatibility (optional)
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-key.json"
+
+# Create credentials object
+credentials = service_account.Credentials.from_service_account_info(gcp_credentials_dict)
 
 # === CONFIGURATION === #
 PROJECT_ID = "hasini-gcp"
@@ -62,13 +64,14 @@ def get_tasks_for_date(selected_date):
 st.title("🧠 Personal AI Assistant")
 st.caption("Manage tasks, see calendar summaries, and talk to Gemini AI!")
 
+# Ask Gemini
 user_input = st.text_input("What do you want to ask Gemini?")
 if st.button("Ask Gemini") and user_input:
     with st.spinner("Thinking..."):
         response = send_to_gemini(user_input)
         st.success(response)
 
-# === Show Tasks === #
+# Show Tasks
 if st.expander("📋 Show My Tasks", expanded=False).checkbox("Show"):
     st.subheader("Your Tasks")
     tasks = get_tasks()
@@ -76,7 +79,7 @@ if st.expander("📋 Show My Tasks", expanded=False).checkbox("Show"):
         task_data = task.to_dict()
         st.markdown(f"- **{task_data['description']}** (Due: {task_data['due_date']})")
 
-# === Add Task === #
+# Add Task
 with st.expander("➕ Add Task Manually", expanded=False):
     task_desc = st.text_input("Task Description")
     task_due = st.date_input("Due Date", min_value=date.today())
@@ -84,7 +87,7 @@ with st.expander("➕ Add Task Manually", expanded=False):
         add_task(task_desc, str(task_due))
         st.success("Task added!")
 
-# === Daily Summary === #
+# Daily Summary
 with st.expander("📅 View Tasks for a Specific Date", expanded=False):
     selected_date = st.date_input("Select Date to View Tasks", min_value=date.today())
     if st.button("Get Reminders"):
