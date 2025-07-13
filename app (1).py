@@ -10,6 +10,11 @@ import json
 # Load GCP credentials from Streamlit secrets
 gcp_credentials_dict = st.secrets["gcp_key"]
 with open("gcp-key.json", "w") as f:
+# Fix the private_key to decode \\n to \n
+gcp_credentials_dict["private_key"] = gcp_credentials_dict["private_key"].replace("\\n", "\n")
+
+# Then write to file
+with open("gcp-key.json", "w") as f:
     json.dump(dict(gcp_credentials_dict), f)
 
 # Explicitly set credentials for Vertex AI
